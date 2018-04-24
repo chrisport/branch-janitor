@@ -31,24 +31,33 @@ func main() {
 	}
 
 	if len(branchesToDelete) == 0 {
+		fmt.Println("Nothing to delete.")
 		return
 	}
 
 	q := fmt.Sprintf("\nDelete [%s] from LOCAL:\t[y/n] ", strings.Join(branchesToDelete, ", "))
 	yes := ReadYesOrNo(reader, q)
 	if yes {
-		for _, b := range branchesToDelete {
-			fmt.Println(exek.Call("git branch -D " + b))
-		}
+		fmt.Println(exek.Call("git branch -D " + strings.Join(branchesToDelete, " ")))
 	}
 	fmt.Println()
 	q = fmt.Sprintf("\nDelete [%s] from REMOTE:\t[y/n] ", strings.Join(branchesToDelete, ", "))
 	yes = ReadYesOrNo(reader, q)
 	if yes {
-		for _, b := range branchesToDelete {
-			fmt.Println(exek.Call("git push origin :" + b))
+		fmt.Println(deleteRemote(branchesToDelete))
+	}
+}
+
+func deleteRemote(branchesToDelete []string) string {
+	origin := exek.Call("git branch -r")
+	remoteBs := branchesToDelete[:0]
+	for _, b := range branchesToDelete {
+		if strings.Contains(origin, "origin/"+b) {
+			remoteBs = append(remoteBs, b)
 		}
 	}
+	fmt.Println("git push origin :" + strings.Join(remoteBs, " :"))
+	return exek.Call("git push origin :" + strings.Join(remoteBs, " :"))
 }
 
 func ReadYesOrNo(reader *bufio.Reader, question string) bool {
